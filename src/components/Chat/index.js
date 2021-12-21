@@ -18,11 +18,11 @@ const Chat = () => {
 	const [user] = useContext(Context);
 	const [type, setType] = useState('');
 	const [checkId, setCheckId] = useState('');
+	const [online, setOnline] = useState(false);
 	useEffect(async () => {
 		const a = await db.collection('login').get()
 		a.docs.map(async (doc) => {
-			if (doc.data().id === user.user.email);
-			{
+			if (doc.data().id === user.user.email) {
 				await db.collection('login').doc(doc.id).update({
 					doc: roomId
 				})
@@ -30,7 +30,7 @@ const Chat = () => {
 		})
 	}, [roomId, user.user.email])
 	useEffect(() => {
-		db.collection('rooms').doc(roomId).collection('message').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
+		const unsub = db.collection('rooms').doc(roomId).collection('message').orderBy('timestamp', 'asc').onSnapshot((snapshot) => {
 			setMessage(snapshot.docs.map((doc) => {
 				return {
 					id: doc.id,
@@ -38,6 +38,9 @@ const Chat = () => {
 				}
 			}))
 		})
+		return () => {
+			unsub();
+		}
 	}, [roomId])
 	useEffect(() => {
 		db.collection('rooms').doc(roomId).onSnapshot(async (snapshot) => {
@@ -45,11 +48,18 @@ const Chat = () => {
 		})
 	}, [roomId])
 
-	useEffect(() => {
-		db.collection('login').onSnapshot((snapshot) => {
-			snapshot.docs.map(async (id) => {
-				if (id.data().id === checkId) {
-					const a = await db.collection('rooms').doc(roomId).collection('message').get()
+	useEffect(async () => {
+		const arr = [];
+		const b = await db.collection('rooms').doc(roomId).get()
+		const a = await db.collection('rooms').doc(roomId).collection('message').get()
+		await b.data().auth.map((id) => {
+			if (user.user.email !== id) {
+				arr.push(id);
+			}
+		})
+		const unsub1 = db.collection('login').onSnapshot((snapshot) => {
+			snapshot.docs.map((id) => {
+				if (id.data().id === arr[0]) {
 					a.docs.map(async (doc) => {
 						const result = await db.collection('rooms').doc(roomId).collection('message').doc(doc.id).get()
 						if (result.data().seen === 1) {
@@ -61,19 +71,26 @@ const Chat = () => {
 				}
 			})
 		})
-		db.collection('login').onSnapshot((snapshot) => {
+		const unsub2 = db.collection('login').onSnapshot((snapshot) => {
 			snapshot.docs.map(async (id) => {
-				if (id.data().id === checkId && id.data().doc === roomId) {
-					const a = await db.collection('rooms').doc(roomId).collection('message').get()
+				if (id.data().id === arr[0] && id.data().doc === roomId) {
 					a.docs.map(async (doc) => {
-						await db.collection('rooms').doc(roomId).collection('message').doc(doc.id).update({
-							seen: 3
-						})
+						const result = await db.collection('rooms').doc(roomId).collection('message').doc(doc.id).get()
+						if (result.data().seen !== 3) {
+							await db.collection('rooms').doc(roomId).collection('message').doc(doc.id).update({
+								seen: 3
+							})
+						}
 					})
 				}
 			})
 		})
-	}, [message, roomId, checkId, user.user.email])
+		return () => {
+			arr = []
+			unsub1();
+			unsub2();
+		}
+	}, [message, roomId, user.user.email])
 
 	const sendMessage = async (e) => {
 		e.preventDefault();
@@ -95,12 +112,27 @@ const Chat = () => {
 			user.user.email !== id ? setCheckId(id) : console.log('bye3')
 		})
 	}, [roomId, user.user.email])
+	useEffect(() => {
+		const unsub = db.collection('login').onSnapshot((snapshot) => {
+			setOnline(false);
+			snapshot.docs.map((doc) => {
+				if (doc.data().id === checkId) {
+					setOnline(true);
+				}
+				return null;
+			})
+		})
+		return () => {
+			unsub();
+		}
+	}, [roomId, checkId])
 	return flag ? (
 		<div className="chat">
 			<div className="chat__header">
 				<Avatar src={`https://avatars.dicebear.com/api/human/${roomId}.svg`} />
 				<div className="chat__headerinfo">
 					<h3>{roomName}</h3>
+					<p>{online ? "online" : "offline"}</p>
 				</div>
 				<div className="chat__headerRight">
 					<IconButton>

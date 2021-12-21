@@ -25,6 +25,7 @@
 .chat__headerinfo > p {
   margin: auto;
   color: gray;
+  font-size: small;
 }
 
 .chat__headerRight {

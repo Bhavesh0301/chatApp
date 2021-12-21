@@ -9,12 +9,23 @@ import { Context } from '../../Context';
 const Sidebarchat = ({ prop, name, id }) => {
 	const [user] = useContext(Context)
 	const createChat = async () => {
-		const RoomName = prompt('name');
-		const email = prompt('email');
-		await db.collection('rooms').add({
-			name: RoomName,
-			auth: [email, user.user.email]
-		})
+		let RoomName = "";
+		let email = ""
+		do {
+			RoomName = prompt('name');
+		} while (RoomName !== null && RoomName === "")
+		do {
+			email = prompt('email');
+		} while (email !== null && email === "")
+		if (RoomName !== null && email !== null) {
+			await db.collection('rooms').add({
+				name: RoomName,
+				auth: [email, user.user.email]
+			})
+		}
+		else {
+			alert("add proper details")
+		}
 	};
 	const [message, setMessage] = useState([]);
 	useEffect(() => {

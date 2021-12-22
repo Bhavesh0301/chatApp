@@ -30,9 +30,7 @@ const Sidebarchat = ({ prop, name, id }) => {
 	const [message, setMessage] = useState([]);
 	useEffect(() => {
 		db.collection('rooms').doc(id).collection('message').orderBy('timestamp', 'desc').onSnapshot((snapshot) => {
-			setMessage(snapshot.docs.map((doc) => {
-				return doc.data().message
-			}))
+			setMessage(snapshot.docs[0])
 		})
 	}, [id])
 	return !prop ? (
@@ -41,7 +39,7 @@ const Sidebarchat = ({ prop, name, id }) => {
 				<Avatar src={`https://avatars.dicebear.com/api/human/${id}.svg`}></Avatar>
 				<div className="sidebarChat__info">
 					<h2>{name}</h2>
-					<p>{message[0]}</p>
+					<p>{message}</p>
 				</div>
 			</div>
 		</Link>

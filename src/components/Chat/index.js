@@ -17,7 +17,7 @@ const Chat = () => {
 	const [message, setMessage] = useState([]);
 	const [user] = useContext(Context);
 	const [type, setType] = useState('');
-	const [checkId, setCheckId] = useState('');
+	const [checkId, setCheckId] = useState('');//second id for the room
 	const [online, setOnline] = useState(false);
 	useEffect(async () => {
 		const a = await db.collection('login').get()
